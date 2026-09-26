@@ -1,0 +1,86 @@
+{
+ "dosing_setpoint_tamper": {
+  "1": {
+   "scenario": "dosing_setpoint_tamper",
+   "attack_minutes": 1440,
+   "nodes_affected": 333,
+   "demand_nodes": 334,
+   "first_harm_h": 0.25,
+   "harm_hours": 59.25,
+   "harmful_volume_m3": 18326.7,
+   "peak_value": 20.0
+  },
+  "2": {
+   "scenario": "dosing_setpoint_tamper",
+   "attack_minutes": 45,
+   "nodes_affected": 231,
+   "demand_nodes": 334,
+   "first_harm_h": 0.25,
+   "harm_hours": 15.75,
+   "harmful_volume_m3": 261.0,
+   "peak_value": 19.99
+  },
+  "3": {
+   "scenario": "dosing_setpoint_tamper",
+   "attack_minutes": 0,
+   "nodes_affected": 0,
+   "demand_nodes": 334,
+   "first_harm_h": null,
+   "harm_hours": 0.0,
+   "harmful_volume_m3": 0.0,
+   "peak_value": 1.0
+  },
+  "4": {
+   "scenario": "dosing_setpoint_tamper",
+   "attack_minutes": 0,
+   "nodes_affected": 0,
+   "demand_nodes": 334,
+   "first_harm_h": null,
+   "harm_hours": 0.0,
+   "harmful_volume_m3": 0.0,
+   "peak_value": 1.0
+  }
+ },
+ "plc_takeover": {
+  "1": {
+   "scenario": "plc_takeover",
+   "attack_minutes": 1440,
+   "nodes_affected": 332,
+   "demand_nodes": 334,
+   "first_harm_h": 0.0,
+   "harm_hours": 28.75,
+   "harmful_volume_m3": 11058.1,
+   "peak_value": 0.0
+  },
+  "2": {
+   "scenario": "plc_takeover",
+   "attack_minutes": 0,
+   "nodes_affected": 0,
+   "demand_nodes": 334,
+   "first_harm_h": null,
+   "harm_hours": 0.0,
+   "harmful_volume_m3": 0.0,
+   "peak_value": 4.46
+  },
+  "3": {
+   "scenario": "plc_takeover",
+   "attack_minutes": 0,
+   "nodes_affected": 0,
+   "demand_nodes": 334,
+   "first_harm_h": null,
+   "harm_hours": 0.0,
+   "harmful_volume_m3": 0.0,
+   "peak_value": 4.46
+  },
+  "4": {
+   "scenario": "plc_takeover",
+   "attack_minutes": 0,
+   "nodes_affected": 0,
+   "demand_nodes": 334,
+   "first_harm_h": null,
+   "harm_hours": 0.0,
+   "harmful_volume_m3": 0.0,
+   "peak_value": 4.46
+  }
+ }
+}
