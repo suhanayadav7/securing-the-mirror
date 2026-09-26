@@ -40,7 +40,8 @@ python3.12 -m venv .venv
 .venv/bin/python -m mirror montecarlo chlorine_fdi --realistic --runs 200
 .venv/bin/python -m mirror network dosing_setpoint_tamper
 .venv/bin/python -m mirror ml                      # BATADAL detector + evasion (~15 s)
-.venv/bin/python -m pytest -q                      # 41 tests
+.venv/bin/python -m mirror defenses                # LSTM + physics experiment (needs requirements-lstm.txt)
+.venv/bin/python -m pytest -q                      # 47 tests
 ```
 
 BATADAL data and the C-Town network are downloaded from batadal.net on first use into `data/`. They
@@ -104,6 +105,50 @@ A white-box attacker then rewrites the readings of *k* sensors:
 An ML detector alone is at best a Level 3 control. Signed telemetry (Level 4) limits how many
 readings an attacker can rewrite.
 
+### 4. Closing the gap: LSTM + Level 4 physics checks (end-sem extension)
+
+`python -m mirror defenses` (needs `pip install -r requirements-lstm.txt` for PyTorch; about 8 min)
+tests two fixes for the weakness in result 3.
+
+**Detectors with no attacker:**
+
+| Detector | Attacks detected | Recall | F1 | Mean hours to detect |
+|---|---|---|---|---|
+| Autoencoder (snapshot) | 5/5 | 0.63 | 0.60 | 9.4 |
+| LSTM autoencoder (3 seeds) | 5/5 | 0.72–0.76 | 0.59–0.63 | 1.0–5.0 |
+| Physics checks alone | 3/5 | 0.12 | 0.20 | 26.7 |
+
+**Recall when the attacker controls *k* of the 43 sensor readings:**
+
+| k | 0 | 5 | 10 | 20 | 43 |
+|---|---|---|---|---|---|
+| Autoencoder alone | 63% | 14% | 2% | 0% | 0% |
+| LSTM alone | 76% | 43% | 22% | 8% | 0% |
+| Autoencoder + physics, naive attacker | 63% | 29% | 66% | 100% | 100% |
+| Autoencoder + physics, physics-aware attacker | 63% | 27% | 14% | 4% | 0% |
+
+**The physics checks** are 14 invariants taken from the C-Town EPANET model (`mirror/physics.py`):
+- **Status-flow**, for 11 pumps and valve V2: a pump or valve reported off carries no flow, and one
+  reported on does.
+- **Pump curve**, for PU2 and PU10: the measured head gain must match the manufacturer's curve.
+
+Together they cover 28 of the 43 sensors, with a 0.05% false-alarm rate on a year of normal data.
+
+What this shows:
+- **The LSTM detects faster and is harder to fool** when the attacker controls few sensors, but it is
+  still beaten by an attacker who controls enough of them.
+- **Physics checks destroy naive forgeries.** Rewriting more sensors without respecting physics makes
+  detection *easier*, up to 100%.
+- **A physics-aware attacker still gets through.** By forging complete groups of related sensors, it
+  evades, because 15 sensors (tank levels and junction pressures) aren't covered by any invariant.
+- **Nothing here stops replay** of genuine old readings (recall 0–2%). That needs signed, timestamped
+  telemetry.
+- **Level 4 has to be defence in depth:**
+  - signatures limit *how many* readings can be forged;
+  - physics limits *which combinations* can be forged consistently;
+  - ML catches what is left.
+- **Next step:** tank mass-balance invariants, to cover the remaining sensors.
+
 ## How each level is modelled
 
 | Level | Layer 3 gateway |
@@ -136,6 +181,9 @@ mirror/attacks.py     six attack scenarios + baseline
 mirror/simulate.py    simulation loop, Monte Carlo
 mirror/hydraulics.py  C-Town EPANET consequences (WNTR)
 mirror/ml.py          BATADAL autoencoder detector + adversarial evasion
+mirror/lstm.py        LSTM autoencoder detector + evasion (PyTorch)
+mirror/physics.py     Level 4 physics invariants from C-Town + physics-aware attacker
+mirror/experiments.py end-sem defences experiment
 mirror/__main__.py    CLI
 app.py                Streamlit dashboard
 results/              generated result files quoted above

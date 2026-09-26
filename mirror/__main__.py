@@ -127,6 +127,26 @@ def cmd_network(args: argparse.Namespace) -> None:
     print(_table([{k: r[k] for k in keep} for r in rows]))
 
 
+def cmd_defenses(args: argparse.Namespace) -> None:
+    from .experiments import run_defenses
+    result = run_defenses(lstm=not args.no_lstm, log=lambda m: print(m, file=sys.stderr))
+    with open(args.save, "w") as f:
+        json.dump(result, f, indent=1)
+    if args.json:
+        print(json.dumps(result, indent=2))
+        return
+    ph = result["physics"]
+    print(f"Physics checks: {len(ph['invariants'])} invariants over {ph['sensors_covered']} of 43 sensors, "
+          f"false-alarm rate on normal data {ph['normal_false_alarm_rate']:.2%}")
+    print("\nAutoencoder recall under evasion (k = sensors the attacker controls):")
+    print(_table([{k: r[k] for k in ("k", "ae_recall", "ae_phys_naive_recall", "ae_phys_aware_recall")}
+                  for r in result["autoencoder"]["evasion"]]))
+    if "lstm" in result:
+        print("\nLSTM recall under evasion:")
+        print(_table(result["lstm"]["evasion"]))
+    print(f"\nSaved to {args.save}")
+
+
 def main(argv: list[str] | None = None) -> None:
     p = argparse.ArgumentParser(prog="mirror", description="Securing the Mirror - digital twin risk toolkit")
     sub = p.add_subparsers(dest="command", required=True)
@@ -167,6 +187,12 @@ def main(argv: list[str] | None = None) -> None:
     m.add_argument("--save", help="write full results JSON to this path")
     m.add_argument("--json", action="store_true")
     m.set_defaults(func=cmd_ml)
+
+    d = sub.add_parser("defenses", help="end-sem experiment: LSTM vs autoencoder, Level 4 physics checks")
+    d.add_argument("--no-lstm", action="store_true", help="skip the LSTM (no PyTorch needed)")
+    d.add_argument("--save", default="results/defenses.json")
+    d.add_argument("--json", action="store_true")
+    d.set_defaults(func=cmd_defenses)
 
     args = p.parse_args(argv)
     args.func(args)

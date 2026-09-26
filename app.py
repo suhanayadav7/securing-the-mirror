@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
@@ -24,9 +27,11 @@ st.set_page_config(page_title="Securing the Mirror", page_icon="💧", layout="w
 st.title("Securing the Mirror")
 st.caption("Dual-use risk and governance framework for AI-driven digital twins in water infrastructure")
 
-tab_score, tab_sim, tab_net, tab_ml, tab_cases, tab_jjm, tab_about = st.tabs(
-    ["Risk scorer", "Attack simulator", "Network impact (C-Town)", "ML detector (BATADAL)", "Case studies",
-     "Jal Jeevan Mission", "Framework"])
+tab_score, tab_sim, tab_net, tab_ml, tab_def, tab_cases, tab_jjm, tab_about = st.tabs(
+    ["Risk scorer", "Attack simulator", "Network impact (C-Town)", "ML detector (BATADAL)",
+     "Defences: LSTM + physics", "Case studies", "Jal Jeevan Mission", "Framework"])
+
+RESULTS = Path(__file__).parent / "results"
 
 
 @st.cache_data(show_spinner=False)
@@ -43,6 +48,9 @@ def cached_network(scenario: str, cfg: SimConfig, uncontained_hours: float) -> d
 
 @st.cache_data(show_spinner=False)
 def cached_ml() -> dict:
+    saved = Path(__file__).parent / "results" / "batadal.json"
+    if saved.exists():   # precomputed by `python -m mirror ml --save results/batadal.json`
+        return json.loads(saved.read_text())
     from mirror.ml import run_experiment
     return run_experiment()
 
@@ -305,6 +313,80 @@ with tab_ml:
     st.caption(f"Most useful sensors for the attacker: {', '.join(res['top_sensors'])}. "
                "Data: Taormina et al., 'The Battle of the Attack Detection Algorithms', J. Water Resour. Plann. "
                "Manage., 2018.")
+
+# ------------------------------------------------------------------------------------- defences
+with tab_def:
+    st.subheader("Closing the gap: a sequence model and Level 4 physics checks")
+    path = RESULTS / "defenses.json"
+    if not path.exists():
+        st.info("Run `python -m mirror defenses` to generate these results.")
+    else:
+        d = json.loads(path.read_text())
+        st.write("The ML tab showed an attacker can blind the autoencoder. Two candidate fixes are tested on the "
+                 "same BATADAL data: **(1) an LSTM autoencoder**, which judges each hour against the preceding "
+                 "24, and **(2) Level 4 physics checks** - laws of the C-Town network that forged readings must "
+                 "obey.")
+
+        st.markdown("#### 1. Detector comparison (no attacker)")
+        ae_c = d["autoencoder"]["clean"]
+        rows = [{"Detector": "Autoencoder (snapshot)", "Attacks detected": f"{ae_c['attacks_detected']}/5",
+                 "Recall": ae_c["recall"], "Precision*": ae_c["precision"], "F1": ae_c["f1"],
+                 "Mean hours to detect": ae_c["mean_delay_h"]}]
+        if "lstm" in d:
+            for i, sd in enumerate(d["lstm"]["seeds"]):
+                rows.append({"Detector": f"LSTM autoencoder (seed {i})", "Attacks detected": f"{sd['attacks_detected']}/5",
+                             "Recall": sd["recall"], "Precision*": sd["precision"], "F1": sd["f1"],
+                             "Mean hours to detect": sd["mean_delay_h"]})
+        ph = d["physics"]
+        rows.append({"Detector": "Physics checks alone", "Attacks detected": f"{ph['clean']['attacks_detected']}/5",
+                     "Recall": ph["clean"]["recall"], "Precision*": ph["clean"]["precision"], "F1": ph["clean"]["f1"],
+                     "Mean hours to detect": ph["clean"]["mean_delay_h"]})
+        st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
+        st.caption("*Lower bound - some attacks in the evaluation set are unlabelled.")
+
+        st.markdown("#### 2. Under attack: recall vs sensors the attacker controls")
+        ks = d["sensor_counts"]
+        ev = d["autoencoder"]["evasion"]
+        series = [("Autoencoder alone", [r["ae_recall"] for r in ev]),
+                  ("LSTM alone", [r["recall"] for r in d["lstm"]["evasion"]] if "lstm" in d else None),
+                  ("Autoencoder + physics, naive attacker", [r["ae_phys_naive_recall"] for r in ev]),
+                  ("Autoencoder + physics, physics-aware attacker", [r["ae_phys_aware_recall"] for r in ev])]
+        fig = go.Figure()
+        for i, (name, ys) in enumerate(series):
+            if ys is None:
+                continue
+            fig.add_trace(go.Scatter(x=ks, y=[y * 100 for y in ys], name=name, mode="lines+markers",
+                                     line=dict(color=SERIES[i], width=2), marker=dict(size=9),
+                                     hovertemplate=f"{name}<br>%{{x}} sensors: %{{y:.0f}}%<extra></extra>"))
+        fig.update_xaxes(title="sensors controlled by the attacker (of 43)", tickvals=ks)
+        fig.update_yaxes(title="recall (% of attack hours)", range=[0, 105])
+        fig.update_layout(title="Which defences survive an adaptive attacker?", hovermode="closest")
+        st.plotly_chart(style(fig, 420), width="stretch")
+        table = pd.DataFrame({"sensors controlled": ks, **{name: [f"{y:.0%}" for y in ys]
+                                                           for name, ys in series if ys is not None}})
+        st.dataframe(table, width="stretch", hide_index=True)
+
+        st.markdown("#### 3. What the physics checks are")
+        st.markdown(
+            f"- **{len(ph['invariants'])} invariants** from the C-Town EPANET model, covering "
+            f"**{ph['sensors_covered']} of 43 sensors**; false-alarm rate on a year of normal data: "
+            f"**{ph['normal_false_alarm_rate']:.2%}**.\n"
+            "- *Status-flow*: a pump or valve reported off carries no flow, one reported on does; status is 0 or 1.\n"
+            "- *Pump curve*: where both sides of a pump have pressure sensors, head gain must match the "
+            "manufacturer's curve at the measured flow - "
+            + ", ".join(f"{c['pump']} (tolerance {c['tolerance_m']} m)" for c in ph["curves"]) + ".")
+
+        st.markdown("#### What this means")
+        st.markdown(
+            "- The **LSTM** detects attacks sooner and is harder to fool when the attacker controls only a "
+            "few sensors - but with enough sensors it is blinded too.\n"
+            "- **Physics checks** catch forgeries that break the network's laws, which is what a naive attacker "
+            "produces. A physics-aware attacker who forges *complete* groups of related sensors still gets "
+            "through, because the invariants cover only part of the sensor set.\n"
+            "- Neither stops **replay** of genuine old readings - that needs the cryptographic freshness checks "
+            "(signed, timestamped packets) that are the other half of Level 4.\n"
+            "- So Level 4 is **defence in depth**: signatures limit *how many* sensors an attacker can forge; "
+            "physics limits *which combinations* they can forge consistently; ML catches what is left.")
 
 # ---------------------------------------------------------------------------------------- cases
 with tab_cases:

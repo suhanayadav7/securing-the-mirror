@@ -1,0 +1,265 @@
+{
+ "sensor_counts": [
+  0,
+  5,
+  10,
+  20,
+  43
+ ],
+ "physics": {
+  "invariants": [
+   "status-flow PU1",
+   "status-flow PU2",
+   "status-flow PU3",
+   "status-flow PU4",
+   "status-flow PU5",
+   "status-flow PU6",
+   "status-flow PU7",
+   "status-flow PU8",
+   "status-flow PU9",
+   "status-flow PU10",
+   "status-flow PU11",
+   "status-flow V2",
+   "pump-curve PU2",
+   "pump-curve PU10"
+  ],
+  "sensors_covered": 28,
+  "normal_false_alarm_rate": 0.00046,
+  "clean": {
+   "precision": 0.519,
+   "recall": 0.123,
+   "f1": 0.199,
+   "attacks_detected": 3,
+   "attacks_total": 5,
+   "mean_delay_h": 26.7,
+   "false_positive_hours": 25,
+   "delays_h": [
+    0,
+    52,
+    null,
+    null,
+    28
+   ]
+  },
+  "curves": [
+   {
+    "pump": "PU2",
+    "offset_m": 0.17,
+    "tolerance_m": 1.5
+   },
+   {
+    "pump": "PU10",
+    "offset_m": 0.75,
+    "tolerance_m": 4.28
+   }
+  ]
+ },
+ "autoencoder": {
+  "clean": {
+   "precision": 0.577,
+   "recall": 0.63,
+   "f1": 0.603,
+   "attacks_detected": 5,
+   "attacks_total": 5,
+   "mean_delay_h": 9.4,
+   "false_positive_hours": 101,
+   "delays_h": [
+    0,
+    47,
+    0,
+    0,
+    0
+   ]
+  },
+  "clean_with_physics": {
+   "precision": 0.539,
+   "recall": 0.63,
+   "f1": 0.581,
+   "attacks_detected": 5,
+   "attacks_total": 5,
+   "mean_delay_h": 9.4,
+   "false_positive_hours": 118,
+   "delays_h": [
+    0,
+    47,
+    0,
+    0,
+    0
+   ]
+  },
+  "evasion": [
+   {
+    "k": 0,
+    "ae_recall": 0.63,
+    "ae_phys_naive_recall": 0.63,
+    "ae_phys_aware_recall": 0.63,
+    "ae_attacks": 5,
+    "ae_phys_naive_attacks": 5,
+    "ae_phys_aware_attacks": 5
+   },
+   {
+    "k": 5,
+    "ae_recall": 0.142,
+    "ae_phys_naive_recall": 0.292,
+    "ae_phys_aware_recall": 0.265,
+    "ae_attacks": 4,
+    "ae_phys_naive_attacks": 4,
+    "ae_phys_aware_attacks": 4
+   },
+   {
+    "k": 10,
+    "ae_recall": 0.023,
+    "ae_phys_naive_recall": 0.658,
+    "ae_phys_aware_recall": 0.142,
+    "ae_attacks": 1,
+    "ae_phys_naive_attacks": 5,
+    "ae_phys_aware_attacks": 2
+   },
+   {
+    "k": 20,
+    "ae_recall": 0.0,
+    "ae_phys_naive_recall": 1.0,
+    "ae_phys_aware_recall": 0.041,
+    "ae_attacks": 0,
+    "ae_phys_naive_attacks": 5,
+    "ae_phys_aware_attacks": 3
+   },
+   {
+    "k": 43,
+    "ae_recall": 0.0,
+    "ae_phys_naive_recall": 1.0,
+    "ae_phys_aware_recall": 0.0,
+    "ae_attacks": 0,
+    "ae_phys_naive_attacks": 5,
+    "ae_phys_aware_attacks": 0
+   }
+  ],
+  "replay": {
+   "precision": 0.0,
+   "recall": 0.0,
+   "f1": 0.0,
+   "attacks_detected": 0,
+   "attacks_total": 5,
+   "mean_delay_h": null,
+   "false_positive_hours": 83,
+   "delays_h": [
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  }
+ },
+ "lstm": {
+  "seeds": [
+   {
+    "precision": 0.474,
+    "recall": 0.763,
+    "f1": 0.585,
+    "attacks_detected": 5,
+    "attacks_total": 5,
+    "mean_delay_h": 1.4,
+    "false_positive_hours": 185,
+    "delays_h": [
+     0,
+     7,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "precision": 0.51,
+    "recall": 0.717,
+    "f1": 0.596,
+    "attacks_detected": 5,
+    "attacks_total": 5,
+    "mean_delay_h": 1.0,
+    "false_positive_hours": 151,
+    "delays_h": [
+     0,
+     5,
+     0,
+     0,
+     0
+    ]
+   },
+   {
+    "precision": 0.545,
+    "recall": 0.753,
+    "f1": 0.632,
+    "attacks_detected": 5,
+    "attacks_total": 5,
+    "mean_delay_h": 5.0,
+    "false_positive_hours": 138,
+    "delays_h": [
+     0,
+     8,
+     17,
+     0,
+     0
+    ]
+   }
+  ],
+  "clean": {
+   "precision": 0.474,
+   "recall": 0.763,
+   "f1": 0.585,
+   "attacks_detected": 5,
+   "attacks_total": 5,
+   "mean_delay_h": 1.4,
+   "false_positive_hours": 185,
+   "delays_h": [
+    0,
+    7,
+    0,
+    0,
+    0
+   ]
+  },
+  "evasion": [
+   {
+    "k": 0,
+    "recall": 0.763,
+    "attacks": 5
+   },
+   {
+    "k": 5,
+    "recall": 0.434,
+    "attacks": 5
+   },
+   {
+    "k": 10,
+    "recall": 0.224,
+    "attacks": 3
+   },
+   {
+    "k": 20,
+    "recall": 0.078,
+    "attacks": 2
+   },
+   {
+    "k": 43,
+    "recall": 0.0,
+    "attacks": 0
+   }
+  ],
+  "replay": {
+   "precision": 0.022,
+   "recall": 0.023,
+   "f1": 0.022,
+   "attacks_detected": 1,
+   "attacks_total": 5,
+   "mean_delay_h": 1.0,
+   "false_positive_hours": 224,
+   "delays_h": [
+    1,
+    null,
+    null,
+    null,
+    null
+   ]
+  }
+ }
+}

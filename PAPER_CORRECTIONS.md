@@ -84,6 +84,24 @@ commands in the README. Adjust the wording to your style.
 > confines the attacker to physically tampered sensors, and redundant sensors checked against the
 > physics model catch those.
 
+> *4) Closing the gap.* Two candidate fixes were evaluated on the same data.
+>
+> An LSTM autoencoder over 24-hour windows detected all five attacks (F1 0.59–0.63 over three seeds) and
+> did so faster: mean time to detect was 1.0–5.0 h, against 9.4 h for the snapshot model. It also resisted
+> partial compromise better, keeping 22% recall when 10 sensors were forged, against 2% for the snapshot
+> model. It was still fully evaded once the attacker controlled all 43 sensors.
+>
+> Level 4 physics checks were then derived from the C-Town model. They are 14 invariants: pump/valve
+> status–flow consistency, and pump-curve head gain at PU2 and PU10. Together they cover 28 of the 43
+> sensors, with a 0.05% false-alarm rate on normal data. Forgeries that ignore physics became easier to
+> detect as more sensors were forged, reaching 100% recall at 20 sensors. A physics-aware attacker who
+> forges complete groups of related sensors still evaded: 4% recall at 20 sensors. Replay of genuine
+> readings defeated every data-level check.
+>
+> Physics checks therefore constrain *which* readings can be forged consistently. Signed, timestamped
+> telemetry constrains *how many* can be forged and defeats replay. Level 4 requires both, supporting
+> the paper's framing of Level 4 as defence in depth.
+
 Limitations to state alongside it:
 - The plant model is simplified.
 - EPANET has no longitudinal dispersion, so peak chlorine concentrations are an upper bound.
